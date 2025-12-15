@@ -1,31 +1,36 @@
-# Python
+# Python (Streamlit version - kept for reference)
+modules/
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
 # Virtual environments
 venv/
 ENV/
 env/
 .venv
+
+# Streamlit
+.streamlit/secrets.toml
+app.py
+
+# Next.js
+/.next/
+/out/
+next-env.d.ts
+.vercel
+
+# Node
+/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
 # IDE
 .vscode/
@@ -35,29 +40,21 @@ env/
 *~
 .DS_Store
 
-# Streamlit
-.streamlit/secrets.toml
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
 # Environment variables
 .env
-.env.local
-
-# Cache
-.cache/
-*.cache
-
-# Logs
-*.log
+.env*.local
+.env.production
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
+/coverage
 
-# Data files (optional - uncomment if you don't want to commit data)
+# Logs
+*.log
+
+# Data files (optional)
 # data/
 # *.csv
 # *.pkl

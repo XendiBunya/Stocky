@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #1f77b4;
+  --secondary: #2ca02c;
+  --background: #ffffff;
+  --foreground: #262730;
+}
+
+body {
+  color: var(--foreground);
+  background: linear-gradient(
+    to bottom,
+    #f8f9fa,
+    #e9ecef
+  );
+  min-height: 100vh;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
