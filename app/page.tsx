@@ -189,7 +189,7 @@ export default function Home() {
                   Ready to Analyze
                 </h3>
                 <p className="text-gray-600">
-                  Configure your analysis parameters and click "Run Analysis" to begin
+                  Configure your analysis parameters and click &quot;Run Analysis&quot; to begin
                 </p>
               </div>
             )}
