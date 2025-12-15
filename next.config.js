@@ -8,12 +8,6 @@ const nextConfig = {
   // Optimize for Vercel deployment
   compress: true,
   poweredByHeader: false,
-  // Ensure proper transpilation of dependencies
-  transpilePackages: ['yahoo-finance2'],
-  // Configure external packages for serverless
-  experimental: {
-    serverComponentsExternalPackages: ['yahoo-finance2'],
-  },
 }
 
 module.exports = nextConfig

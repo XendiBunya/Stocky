@@ -1,12 +1,15 @@
 /**
  * Stock Data Fetching Module
- * Handles fetching historical stock data using yahoo-finance2
+ * Handles fetching historical stock data using direct Yahoo Finance API
  */
 
-import yahooFinance from 'yahoo-finance2';
+import axios from 'axios';
 import { StockDataPoint, StockInfo } from './types';
 
 export class StockDataFetcher {
+  private readonly baseUrl = 'https://query1.finance.yahoo.com/v8/finance/chart';
+  private readonly quoteUrl = 'https://query1.finance.yahoo.com/v7/finance/quote';
+
   /**
    * Fetch historical stock data for a given ticker and date range
    */
@@ -16,29 +19,54 @@ export class StockDataFetcher {
     endDate: string
   ): Promise<StockDataPoint[]> {
     try {
-      const result = await yahooFinance.historical(ticker, {
-        period1: startDate,
-        period2: endDate,
-        interval: '1d',
+      const period1 = Math.floor(new Date(startDate).getTime() / 1000);
+      const period2 = Math.floor(new Date(endDate).getTime() / 1000);
+
+      const url = `${this.baseUrl}/${ticker}?period1=${period1}&period2=${period2}&interval=1d`;
+
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+        },
+        timeout: 30000,
       });
 
-      if (!result || result.length === 0) {
+      const result = response.data?.chart?.result?.[0];
+
+      if (!result || !result.timestamp) {
         throw new Error(`No data found for ticker ${ticker}`);
       }
 
+      const timestamps = result.timestamp;
+      const quotes = result.indicators?.quote?.[0];
+
+      if (!quotes) {
+        throw new Error(`No quote data available for ${ticker}`);
+      }
+
       // Convert to our data format
-      const data: StockDataPoint[] = result.map((item) => ({
-        date: item.date.toISOString().split('T')[0],
-        open: item.open,
-        high: item.high,
-        low: item.low,
-        close: item.close,
-        volume: item.volume,
+      const data: StockDataPoint[] = timestamps.map((timestamp: number, index: number) => ({
+        date: new Date(timestamp * 1000).toISOString().split('T')[0],
+        open: quotes.open[index] || 0,
+        high: quotes.high[index] || 0,
+        low: quotes.low[index] || 0,
+        close: quotes.close[index] || 0,
+        volume: quotes.volume[index] || 0,
       }));
 
+      // Filter out invalid data points
+      const validData = data.filter(d => d.close > 0);
+
+      if (validData.length === 0) {
+        throw new Error(`No valid data found for ticker ${ticker}`);
+      }
+
       // Calculate additional metrics
-      return this.calculateMetrics(data);
+      return this.calculateMetrics(validData);
     } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Error fetching data for ${ticker}: ${error.message}`);
+      }
       throw new Error(`Error fetching data for ${ticker}: ${(error as Error).message}`);
     }
   }
@@ -183,16 +211,27 @@ export class StockDataFetcher {
    */
   async getStockInfo(ticker: string): Promise<StockInfo> {
     try {
-      const quote = await yahooFinance.quoteSummary(ticker, {
-        modules: ['price', 'summaryProfile'],
+      const url = `${this.quoteUrl}?symbols=${ticker}`;
+
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+        },
+        timeout: 10000,
       });
 
+      const quote = response.data?.quoteResponse?.result?.[0];
+
+      if (!quote) {
+        throw new Error('No quote data available');
+      }
+
       return {
-        name: quote.price?.longName || ticker,
-        sector: quote.summaryProfile?.sector || 'N/A',
-        industry: quote.summaryProfile?.industry || 'N/A',
-        marketCap: quote.price?.marketCap || 'N/A',
-        currency: quote.price?.currency || 'USD',
+        name: quote.longName || quote.shortName || ticker,
+        sector: quote.sector || 'N/A',
+        industry: quote.industry || 'N/A',
+        marketCap: quote.marketCap || 'N/A',
+        currency: quote.currency || 'USD',
       };
     } catch (error) {
       return {
@@ -210,11 +249,20 @@ export class StockDataFetcher {
    */
   async validateTicker(ticker: string): Promise<boolean> {
     try {
-      const result = await yahooFinance.historical(ticker, {
-        period1: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        period2: new Date().toISOString().split('T')[0],
+      const period1 = Math.floor((Date.now() - 5 * 24 * 60 * 60 * 1000) / 1000);
+      const period2 = Math.floor(Date.now() / 1000);
+
+      const url = `${this.baseUrl}/${ticker}?period1=${period1}&period2=${period2}&interval=1d`;
+
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+        },
+        timeout: 10000,
       });
-      return result && result.length > 0;
+
+      const result = response.data?.chart?.result?.[0];
+      return result && result.timestamp && result.timestamp.length > 0;
     } catch {
       return false;
     }
